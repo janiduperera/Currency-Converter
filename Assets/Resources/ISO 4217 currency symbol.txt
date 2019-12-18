@@ -1,0 +1,112 @@
+Albania |   ALL
+Algeria |   DZD
+Argentina   |   ARS
+Armenia |   AMD
+Australia   |   AUD
+Austria |   EUR
+Azerbaijan  |   AZN
+Bahrain |   BHD
+Belarus |   BYR
+Belgium |   EUR
+Belize  |   BZD
+Venezuela    |   VEF
+Bolivia |   BOB
+Brazil  |   BRL
+Brunei  |   BND
+Bulgaria    |   BGN
+Canada  |   CAD
+Caribbean   |   USD
+Chile   |   CLP
+Colombia    |   COP
+Costa Rica  |   CRC
+Croatia |   HRK
+Czechia  |   CZK
+Denmark |   DKK
+Dominican Republic  |   DOP
+Ecuador |   USD
+Egypt   |   EGP
+El Salvador |   USD
+Estonia |   EEK
+Ethiopia    |   ETB
+Faroe Islands   |   DKK
+Finland |   EUR
+France  |   EUR
+Georgia |   GEL
+Germany |   EUR
+Greece  |   EUR
+Guatemala   |   GTQ
+Honduras    |   HNL
+Hong Kong   |   HKD
+Hungary |   HUF
+Iceland |   ISK
+India   |   INR
+Indonesia   |   IDR
+Iran    |   IRR
+Iraq    |   IQD
+Ireland |   EUR
+Pakistan    |   PKR
+Israel  |   ILS
+Italy   |   EUR
+Jamaica |   JMD
+Japan   |   JPY
+Jordan  |   JOD
+Kazakhstan  |   KZT
+Kenya   |   KES
+Korea   |   KRW
+Kuwait  |   KWD
+Kyrgyzstan  |   KGS
+Latvia  |   LVL
+Lebanon |   LBP
+Libya   |   LYD
+Liechtenstein   |   CHF
+Lithuania   |   LTL
+Luxembourg  |   EUR
+Macao   |   MOP
+North Macedonia |   MKD
+Malaysia    |   MYR
+Maldives    |   MVR
+Mexico  |   MXN
+Mongolia    |   MNT
+Morocco |   MAD
+Netherlands |   EUR
+New Zealand |   NZD
+Nicaragua   |   NIO
+Norway  |   NOK
+Oman    |   OMR
+Panama  |   PAB
+Paraguay    |   PYG
+China  |   CNY
+Peru    |   PEN
+Philippines |   PHP
+Poland  |   PLN
+Portugal    |   EUR
+Monaco  |   EUR
+Puerto Rico |   USD
+Qatar   |   QAR
+Romania |   RON
+Russia  |   RUB
+Saudi Arabia    |   SAR
+Serbia  |   RSD
+Singapore   |   SGD
+Slovakia    |   EUR
+Slovenia    |   EUR
+South Africa    |   ZAR
+Spain   |   EUR
+Sri Lanka   |   LKR
+Sweden  |   SEK
+Switzerland |   CHF
+Syria   |   SYP
+Taiwan  |   TWD
+Thailand    |   THB
+Trinidad and Tobago |   TTD
+Tunisia |   TND
+Turkey  |   TRY
+Ukraine |   UAH
+United Arab Emirates    |   AED
+United Kingdom  |   GBP
+United States   |   USD
+Uruguay |   UYU
+Uzbekistan  |   UZS
+Vietnam |   VND
+Yemen   |   YER
+Zimbabwe    |   ZWL
