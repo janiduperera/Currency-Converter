@@ -9,8 +9,101 @@ using System.Linq;
 
 public class UIController : Singleton<UIController>
 {
+
+    #region Start
+    public void InitiateCurrencyData()
+    {
+        Transform m_ScrollRectContainer = CountryScrollParentRect.Find("Scroll View").gameObject.GetComponent<ScrollRect>().content;
+        GameObject m_ScrollItemObj;
+
+        if (m_ScrollRectContainer.childCount == 0)
+        {
+            foreach (KeyValuePair<string, string[]> pair in DataClass.Instance.CountryCodeDictionary)
+            {
+                if (DataClass.Instance.CurrencyRatesDictionary.ContainsKey(pair.Value[0]))
+                {
+                    m_ScrollItemObj = Instantiate(ScrollItemPrefab);
+                    string m_CountryNameAndRateAndCurrencyCode = pair.Key + ":" + DataClass.Instance.CurrencyRatesDictionary[pair.Value[0]] + ":" + pair.Value[0];
+                    m_ScrollItemObj.name = m_CountryNameAndRateAndCurrencyCode;
+                    m_ScrollItemObj.GetComponent<Button>().onClick.AddListener(delegate { OnScrollItemClicked(m_CountryNameAndRateAndCurrencyCode); });
+                    m_ScrollItemObj.transform.Find("CountryTxt").gameObject.GetComponent<Text>().text = pair.Key;
+                    m_ScrollItemObj.transform.Find("CurrencyTxt").gameObject.GetComponent<Text>().text = pair.Value[0];
+                    m_ScrollItemObj.transform.Find("FlagImg").gameObject.GetComponent<Image>().sprite = Resources.Load<Sprite>("CountryFlags/" + pair.Value[1].ToLower());
+
+                    m_ScrollItemObj.transform.SetParent(m_ScrollRectContainer);
+                    m_ScrollItemObj.transform.localScale = Vector3.one;
+
+                    if (pair.Key == "France") // Set the initial ToConvert Section
+                    {
+                        SetToConvertCurrency(m_CountryNameAndRateAndCurrencyCode, true);
+                        Set_Exchange_ToConvert(m_CountryNameAndRateAndCurrencyCode, true);
+                    }
+                    else if (pair.Key == "United Kingdom") // Set the initial Result Section 
+                    {
+                        SetResultCurrency(m_CountryNameAndRateAndCurrencyCode, true);
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < m_ScrollRectContainer.childCount; i++)
+            {
+                string m_Country_Rate_CurrencyCode = m_ScrollRectContainer.GetChild(i).name;
+                m_ScrollRectContainer.GetChild(i).GetComponent<Button>().onClick.RemoveAllListeners();
+                m_Country_Rate_CurrencyCode = m_Country_Rate_CurrencyCode.Split(':')[0] + ":" + DataClass.Instance.CurrencyRatesDictionary[m_Country_Rate_CurrencyCode.Split(':')[2]] + ":" + m_Country_Rate_CurrencyCode.Split(':')[2];
+                m_ScrollRectContainer.GetChild(i).GetComponent<Button>().onClick.AddListener(delegate { OnScrollItemClicked(m_Country_Rate_CurrencyCode); });
+
+                if (ToCountryTxt.text == m_Country_Rate_CurrencyCode.Split(':')[0]) // Update To Convert Country Section
+                {
+                    m_ToCurrencyCode = m_Country_Rate_CurrencyCode.Split(':')[2];
+                    m_ToExchangeRate = Convert.ToDouble(m_Country_Rate_CurrencyCode.Split(':')[1]);
+                }
+
+                if (ResultCountryTxt.text == m_Country_Rate_CurrencyCode.Split(':')[0]) // Update Result Country Section
+                {
+                    m_ResultCurrencyCode = m_Country_Rate_CurrencyCode.Split(':')[2];
+                    m_ResultExchangeRate = Convert.ToDouble(m_Country_Rate_CurrencyCode.Split(':')[1]);
+                }
+
+                if(Ex_FromCountry.text == m_Country_Rate_CurrencyCode.Split(':')[0]) // Update Exchange Rate Panel From Country Section
+                {
+                    m_Ex_ToCurrencyCode = m_Country_Rate_CurrencyCode.Split(':')[2];
+                    m_Ex_ToExchangeRate = Convert.ToDouble(m_Country_Rate_CurrencyCode.Split(':')[1]);
+                }
+            }
+        }
+
+        SetResultCurrencyAmount();
+        Set_ExchangeRatesResult_CurrencyAmounts();
+    }
+    #endregion Start
+
+    #region Tab Buttons
+    private Color m_TabActiveColor = Color.black;
+    private Color m_TabInActiveColor = new Color(150f/255f, 150f/255f, 150f/255f);
+    public Text[] TabButtonTxts;
+    public GameObject[] Panels;
+
+    public void OnTabButtonClick(int _index)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            if (i == _index)
+            {
+                Panels[i].SetActive(true);
+                TabButtonTxts[i].color = m_TabActiveColor;
+            }
+            else
+            {
+                Panels[i].SetActive(false);
+                TabButtonTxts[i].color = m_TabInActiveColor;
+            }
+        }
+    }
+    #endregion Tab Buttons
+
     #region Convert Panel
-    public GameObject ConvertPanel;
     public Image ToConvertFlagImg, ResultFlagImg;
     public Text ToCurrencyTxt, ToCountryTxt, ToConvertSymbolTxt, ResultCurrencyTxt, ResultCountryTxt, ResultSymbolTxt, DateTxt;
     public InputField ToConvertInputField;
@@ -20,22 +113,12 @@ public class UIController : Singleton<UIController>
     public GameObject ScrollDissmissBtn;
     private bool m_IsConvertButtonClick = false;
     private float[] m_ScrollRectHeightArray = new float[] { 634f, 480f };
-    private bool m_IsConvertPanelActive = true;
 
     public GameObject ExchangeRateSection;
     private string m_ToCurrencyCode, m_ResultCurrencyCode;
     private double m_ToExchangeRate, m_ResultExchangeRate;
 
-    public void BringInConvertPanel()
-    {
-        if(!m_IsConvertPanelActive)
-        {
-            ConvertPanel.SetActive(true);
-        }
-    }
-
-
-    private void SetToConvertCurrency(string _countryNameAndRateAndCurrencyCode)
+    private void SetToConvertCurrency(string _countryNameAndRateAndCurrencyCode, bool _atStart = false)
     {
         try
         {
@@ -54,10 +137,14 @@ public class UIController : Singleton<UIController>
 
         m_ToCurrencyCode = _countryNameAndRateAndCurrencyCode.Split(':')[2];
         m_ToExchangeRate = Convert.ToDouble(_countryNameAndRateAndCurrencyCode.Split(':')[1]);
-        OnInputFieldEndTyping(ToConvertInputField.text);
+
+        if (!_atStart)
+        {
+            SetResultCurrencyAmount();
+        }
     }
 
-    private void SetResultCurrency(string _countryNameAndRateAndCurrencyCode)
+    private void SetResultCurrency(string _countryNameAndRateAndCurrencyCode, bool _atStart = false)
     {
         try
         {
@@ -77,61 +164,40 @@ public class UIController : Singleton<UIController>
 
         m_ResultCurrencyCode = _countryNameAndRateAndCurrencyCode.Split(':')[2];
         m_ResultExchangeRate = Convert.ToDouble(_countryNameAndRateAndCurrencyCode.Split(':')[1]);
-        OnInputFieldEndTyping(ToConvertInputField.text);
-    }
 
-
-    public void InitiateCountryScrollList()
-    {
-        Transform m_ScrollRectContainer = CountryScrollParentRect.Find("Scroll View").gameObject.GetComponent<ScrollRect>().content;
-        GameObject m_ScrollItemObj;
-
-        foreach(KeyValuePair<string, string[]> pair in DataClass.Instance.CountryCodeDictionary)
+        if (!_atStart)
         {
-            if(DataClass.Instance.CurrencyRatesDictionary.ContainsKey(pair.Value[0]))
-            {
-                m_ScrollItemObj = Instantiate(ScrollItemPrefab);
-                string m_CountryNameAndRateAndCurrencyCode = pair.Key + ":"+ DataClass.Instance.CurrencyRatesDictionary[pair.Value[0]] +":"+ pair.Value[0];
-                m_ScrollItemObj.GetComponent<Button>().onClick.AddListener(delegate { OnScrollItemClicked(m_CountryNameAndRateAndCurrencyCode); });
-                m_ScrollItemObj.transform.Find("CountryTxt").gameObject.GetComponent<Text>().text = pair.Key;
-                m_ScrollItemObj.transform.Find("CurrencyTxt").gameObject.GetComponent<Text>().text = pair.Value[0];
-                m_ScrollItemObj.transform.Find("FlagImg").gameObject.GetComponent<Image>().sprite = Resources.Load<Sprite>("CountryFlags/"+ pair.Value[1].ToLower());
-
-                m_ScrollItemObj.transform.SetParent(m_ScrollRectContainer);
-                m_ScrollItemObj.transform.localScale = Vector3.one;
-
-                if(pair.Key == "France") // Set the initial ToConvert Section
-                {
-                    SetToConvertCurrency(m_CountryNameAndRateAndCurrencyCode);
-                    m_ToCurrencyCode = pair.Value[0];
-                    m_ToExchangeRate = Convert.ToDouble(DataClass.Instance.CurrencyRatesDictionary[pair.Value[0]]);
-                    ToConvertInputField.text = DataClass.Instance.FormatCurrencyToDecimal(m_ToExchangeRate);
-                }
-                else if(pair.Key == "United Kingdom") // Set the initial Result Section 
-                {
-                    SetResultCurrency(m_CountryNameAndRateAndCurrencyCode);
-                    m_ResultCurrencyCode = pair.Value[0];
-                    m_ResultExchangeRate = Convert.ToDouble(DataClass.Instance.CurrencyRatesDictionary[pair.Value[0]]);
-                }
-            }
+            SetResultCurrencyAmount();
         }
-
-       OnInputFieldEndTyping(ToConvertInputField.text);
     }
 
-    private void BringInCountryScroll()
+    private void BringInCountryScroll(bool _IsCalledFromExchangePanel = false)
     {
-        CountryScrollParentRect.SetAsLastSibling();
         ScrollDissmissBtn.SetActive(true);
 
-        if(m_IsConvertButtonClick)
+        if(!_IsCalledFromExchangePanel)
         {
-            CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta = new Vector2(CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta.x, m_ScrollRectHeightArray[0]);
+            CountryScrollParentRect.SetParent(Panels[0].transform);
+            ScrollDissmissBtn.gameObject.transform.SetParent(Panels[0].transform);
+            ScrollDissmissBtn.GetComponent<RectTransform>().SetAsLastSibling();
+            if (m_IsConvertButtonClick)
+            {
+                CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta = new Vector2(CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta.x, m_ScrollRectHeightArray[0]);
+            }
+            else
+            {
+                CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta = new Vector2(CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta.x, m_ScrollRectHeightArray[1]);
+            }
         }
         else
         {
-            CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta = new Vector2(CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta.x, m_ScrollRectHeightArray[1]);
+            CountryScrollParentRect.SetParent(Panels[1].transform);
+            ScrollDissmissBtn.gameObject.transform.SetParent(Panels[1].transform);
+            ScrollDissmissBtn.GetComponent<RectTransform>().SetAsLastSibling();
+            CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta = new Vector2(CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta.x, 710);
         }
+
+        CountryScrollParentRect.SetAsLastSibling();
     }
 
     private void DismissCountryScroll()
@@ -145,13 +211,20 @@ public class UIController : Singleton<UIController>
     {
         DismissCountryScroll();
 
-        if (m_IsConvertButtonClick)
+        if (CountryScrollParentRect.parent.gameObject == Panels[0])
         {
-            SetToConvertCurrency(_countryNameAndRateAndCurrencyCode);
+            if (m_IsConvertButtonClick)
+            {
+                SetToConvertCurrency(_countryNameAndRateAndCurrencyCode);
+            }
+            else
+            {
+                SetResultCurrency(_countryNameAndRateAndCurrencyCode);
+            }
         }
         else
         {
-            SetResultCurrency(_countryNameAndRateAndCurrencyCode);
+            Set_Exchange_ToConvert(_countryNameAndRateAndCurrencyCode);
         }
     }
 
@@ -176,8 +249,12 @@ public class UIController : Singleton<UIController>
 
     public void OnInputFieldEndTyping(string _currencyAmount)
     {
-        ToConvertInputField.text = DataClass.Instance.FormatCurrencyToDecimal(Convert.ToDouble(_currencyAmount));
-        ResultTxt.text = DataClass.Instance.ConvertedCurrency(Convert.ToDouble(_currencyAmount), m_ToExchangeRate, m_ResultExchangeRate);
+        CurrencyController.Instance.GetCurrencyData("latest");
+    }
+
+    private void SetResultCurrencyAmount()
+    {
+        ResultTxt.text = DataClass.Instance.ConvertedCurrency(Convert.ToDouble(ToConvertInputField.text), m_ToExchangeRate, m_ResultExchangeRate);
 
         SetExchangeRate();
     }
@@ -193,6 +270,101 @@ public class UIController : Singleton<UIController>
         ExchangeRateSection.transform.Find("ExchangeRateTxt").gameObject.GetComponent<Text>().text = "1 <size=15>" + m_ToCurrencyCode + "</size>  =>  " + DataClass.Instance.FormatCurrencyToDecimal(m_ResultExchangeRate / m_ToExchangeRate, 4) + " <size=15>" + m_ResultCurrencyCode + "</size>";
     }
     #endregion Convert Panel
+
+    #region Exchange Rate Panel
+    public InputField Ex_FromInputField;
+    public Image Ex_FromFlag;
+    public Text Ex_FromCountry, Ex_FromCurrency, Ex_FromSymbol;
+    private string m_Ex_ToCurrencyCode;
+    private double m_Ex_ToExchangeRate;
+    public Transform Ex_FavoriteContent;
+    public GameObject Ex_FavoriteScrollItemPrefab;
+    public GameObject Ex_AddMoreScrollItemPrefab;
+
+    private void Set_Exchange_ToConvert(string _countryNameAndRateAndCurrencyCode, bool _atStart = false)
+    {
+        try
+        {
+            RegionInfo m_RegionInfo = new RegionInfo(DataClass.Instance.CountryCodeDictionary[_countryNameAndRateAndCurrencyCode.Split(':')[0]][1]);
+            Ex_FromSymbol.text = m_RegionInfo.CurrencySymbol;
+        }
+        catch (Exception ex)
+        {
+            Ex_FromSymbol.text = "";
+            Debug.Log(ex.Message);
+        }
+
+        Ex_FromCountry.text = _countryNameAndRateAndCurrencyCode.Split(':')[0];
+        Ex_FromCurrency.text = DataClass.Instance.CountryCodeDictionary[_countryNameAndRateAndCurrencyCode.Split(':')[0]][0];
+        Ex_FromFlag.sprite = Resources.Load<Sprite>("CountryFlags/" + DataClass.Instance.CountryCodeDictionary[_countryNameAndRateAndCurrencyCode.Split(':')[0]][1].ToLower());
+
+        m_Ex_ToCurrencyCode = _countryNameAndRateAndCurrencyCode.Split(':')[2];
+        m_Ex_ToExchangeRate = Convert.ToDouble(_countryNameAndRateAndCurrencyCode.Split(':')[1]);
+
+        if (!_atStart)
+        {
+            Set_ExchangeRatesResult_CurrencyAmounts();
+        }
+    }
+
+    private void Set_ExchangeRatesResult_CurrencyAmounts()
+    {
+        double m_TempExchangeRate;
+        if (Ex_FavoriteContent.childCount == 0)
+        {
+            GameObject m_FavoriteScrollItem;
+
+            foreach(string _country in DataClass.Instance.DefaultFavoritCountryList)
+            {
+                m_FavoriteScrollItem = Instantiate(Ex_FavoriteScrollItemPrefab);
+                m_TempExchangeRate = Convert.ToDouble(DataClass.Instance.CurrencyRatesDictionary[DataClass.Instance.CountryCodeDictionary[_country][0]]);
+                m_FavoriteScrollItem.name = _country + ":" + m_TempExchangeRate + ":" + DataClass.Instance.CountryCodeDictionary[_country][0];
+                //m_ScrollItemObj.GetComponent<Button>().onClick.AddListener(delegate { OnScrollItemClicked(m_CountryNameAndRateAndCurrencyCode); });
+                m_FavoriteScrollItem.transform.Find("Button").Find("CountryTxt").gameObject.GetComponent<Text>().text = _country;
+                m_FavoriteScrollItem.transform.Find("Button").Find("CurrencyTxt").gameObject.GetComponent<Text>().text = DataClass.Instance.CountryCodeDictionary[_country][0];
+                m_FavoriteScrollItem.transform.Find("Button").Find("FlagImg").gameObject.GetComponent<Image>().sprite = Resources.Load<Sprite>("CountryFlags/" + DataClass.Instance.CountryCodeDictionary[_country][1].ToLower());
+
+                try
+                {
+                    RegionInfo m_RegionInfo = new RegionInfo(DataClass.Instance.CountryCodeDictionary[_country][1]);
+                    m_FavoriteScrollItem.transform.Find("SymbolTxt").gameObject.GetComponent<Text>().text = m_RegionInfo.CurrencySymbol;
+                }
+                catch (Exception ex)
+                {
+                    m_FavoriteScrollItem.transform.Find("SymbolTxt").gameObject.GetComponent<Text>().text = "";
+                    Debug.Log(ex.Message);
+                }
+
+                m_FavoriteScrollItem.transform.Find("ExchangeRateTxt").gameObject.GetComponent<Text>().text = DataClass.Instance.ConvertedCurrency(Convert.ToDouble(Ex_FromInputField.text), m_Ex_ToExchangeRate, m_TempExchangeRate);
+
+                m_FavoriteScrollItem.transform.SetParent(Ex_FavoriteContent);
+                m_FavoriteScrollItem.transform.localScale = Vector3.one;
+            }
+        }
+        else
+        {
+            for(int i = 0; i < Ex_FavoriteContent.childCount; i++)
+            {
+                string m_Country_Rate_CurrencyCode = Ex_FavoriteContent.GetChild(i).name;
+                m_TempExchangeRate = Convert.ToDouble(DataClass.Instance.CurrencyRatesDictionary[DataClass.Instance.CountryCodeDictionary[m_Country_Rate_CurrencyCode.Split(':')[0]][0]]);
+                Ex_FavoriteContent.GetChild(i).name = m_Country_Rate_CurrencyCode.Split(':')[0] + ":" + m_TempExchangeRate + ":" + DataClass.Instance.CountryCodeDictionary[m_Country_Rate_CurrencyCode.Split(':')[0]][0];
+                Ex_FavoriteContent.GetChild(i).Find("ExchangeRateTxt").gameObject.GetComponent<Text>().text = DataClass.Instance.ConvertedCurrency(Convert.ToDouble(Ex_FromInputField.text), m_Ex_ToExchangeRate, m_TempExchangeRate);
+            }
+        }
+    }
+
+    public void Ex_FromButtonClick()
+    {
+        m_IsConvertButtonClick = true;
+        CountryScrollParentRect.position = new Vector2(CountryScrollParentRect.position.x, Ex_FromFlag.gameObject.transform.parent.position.y);
+        BringInCountryScroll(true);
+    }
+
+    public void OnExchangeInputFieldEnd(string _currencyAmount)
+    {
+        CurrencyController.Instance.GetCurrencyData("latest");
+    }
+    #endregion Exchange Rate Panel
 
     #region Loading Panel
     public GameObject LoadingPanel;

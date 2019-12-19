@@ -8,8 +8,6 @@ public class CurrencyController : Singleton<CurrencyController>
     // Start is called before the first frame update
     void Start()
     {
-        //TODO : Remove
-        PlayerPrefs.DeleteAll();
         if(PlayerPrefs.GetInt("CurrencyConverter", 0) == 0) // If this is the first time the app is used, We are saving the local Currency Json file to persistant data path. 
         {
             TextAsset m_tempTextAsset = Resources.Load("latest") as TextAsset;
@@ -17,6 +15,7 @@ public class CurrencyController : Singleton<CurrencyController>
             PlayerPrefs.SetInt("CurrencyConverter", 1);
         }
 
+        UIController.Instance.OnTabButtonClick(0);
         InitiateCountries();
         GetCurrencyData("latest");
     }
@@ -98,7 +97,7 @@ public class CurrencyController : Singleton<CurrencyController>
     {
         DataClass.Instance.CurrencyRatesDictionary = _currencyData["rates"] as Dictionary<string, object>;
         UIController.Instance.SetDate(System.Convert.ToDouble(_currencyData["timestamp"]));
-        UIController.Instance.InitiateCountryScrollList();
+        UIController.Instance.InitiateCurrencyData();
     }
     #endregion API Calling
 

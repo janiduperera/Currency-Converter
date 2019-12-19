@@ -32,6 +32,16 @@ public class DataClass : Singleton<DataClass>
     {
         m_CountryCodeDictionary.Add(_key, _value);
     }
+
+    private List<string> m_DefaultFavoritCountryList = new List<string> { "United States", "United Kingdom", "India", "Australia", "Canada", "Singapore", "Japan", "China" };
+    public List<string> DefaultFavoritCountryList
+    {
+        get { return m_DefaultFavoritCountryList; }
+    }
+    public void AddToDefaultFavoritCountries(string _country)
+    {
+        m_DefaultFavoritCountryList.Add(_country);
+    }
     #endregion Country Codes
 
     #region Currency Rates
@@ -52,16 +62,6 @@ public class DataClass : Singleton<DataClass>
     {
         get { return m_CurrencyRatesDictionary; }
         set { m_CurrencyRatesDictionary = value; }
-    }
-
-    /// <summary>
-    /// Used to cache web request for historical currency data. No need to call API if historical data is avaiable in the app. 
-    /// </summary>
-    private Dictionary<string, IDictionary> m_CacheWebRequests = new Dictionary<string, IDictionary>();
-    public Dictionary<string, IDictionary> CacheWebRequest
-    {
-        get { return m_CacheWebRequests; }
-        set { m_CacheWebRequests = value; }
     }
     #endregion Currency Rates
 

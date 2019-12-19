@@ -18,10 +18,10 @@ public class APIConnection : Singleton<APIConnection>
     /// <typeparam name="IDictionary">The 1st type parameter.</typeparam>
     private void SendAPIRequest<IDictionary>(string _url, UnityAction<IDictionary> _callbackOnSuccess, UnityAction<string> _callbackOnFail)
     {
-        //StartCoroutine(RequestCoroutine(_url, _callbackOnSuccess, _callbackOnFail));
+        StartCoroutine(RequestCoroutine(_url, _callbackOnSuccess, _callbackOnFail));
 
         //TODO: Remove 
-        _callbackOnSuccess?.Invoke((IDictionary)Json.Deserialize(Test.Instance.jsonTxt.text));
+        //_callbackOnSuccess?.Invoke((IDictionary)Json.Deserialize(Test.Instance.jsonTxt.text));
     }
 
     /// <summary>
@@ -39,12 +39,16 @@ public class APIConnection : Singleton<APIConnection>
 
         if (m_WWWWebRequest.isNetworkError || m_WWWWebRequest.isHttpError)
         {
+#if UNITY_EDITOR
             Debug.LogError(m_WWWWebRequest.error);
+#endif
             _callbackOnFail?.Invoke(m_WWWWebRequest.error);
         }
         else
         {
+#if UNITY_EDITOR
             Debug.Log(m_WWWWebRequest.downloadHandler.text);
+#endif
             _callbackOnSuccess?.Invoke((IDictionary)Json.Deserialize(m_WWWWebRequest.downloadHandler.text));
             if(m_Date == "latest") // We update all the latest currency data in to our local file to be used for offline conversions. 
             {

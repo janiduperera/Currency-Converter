@@ -38,7 +38,7 @@ Cabo Verde  |   CV
 Cambodia    |   KH
 Cameroon    |   CM
 Canada  |   CA
-Cayman Islands (the)    |   KY
+Caribbean    |   WI
 Central African Republic (the)  |   CF
 Chad    |   TD
 Chile   |   CL
