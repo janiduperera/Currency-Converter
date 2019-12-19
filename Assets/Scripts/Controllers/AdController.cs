@@ -16,8 +16,13 @@ public class AdController : Singleton<AdController>
     // Start is called before the first frame update
     void Start()
     {
+#if UNITY_IOS
         Advertisement.Initialize(m_GameID, IsTestMode);
         StartCoroutine(ShowBannerWhenReady());
+#elif UNITY_ANDROID
+        Advertisement.Initialize(m_GameID, IsTestMode);
+        StartCoroutine(ShowBannerWhenReady());
+#endif
     }
 
     IEnumerator ShowBannerWhenReady()
