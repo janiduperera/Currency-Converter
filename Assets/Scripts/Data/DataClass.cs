@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
@@ -41,6 +40,11 @@ public class DataClass : Singleton<DataClass>
     public void AddToDefaultFavoritCountries(string _country)
     {
         m_DefaultFavoritCountryList.Add(_country);
+    }
+
+    public bool IsAllReadyAddedToFavorite(string _countryName)
+    {
+        return m_DefaultFavoritCountryList.Contains(_countryName);
     }
     #endregion Country Codes
 
@@ -88,6 +92,31 @@ public class DataClass : Singleton<DataClass>
         m_CurrentDate = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
         m_CurrentDate = m_CurrentDate.AddSeconds(_timestamp).ToLocalTime();
         return m_CurrentDate.ToString("MMMM dd, yyyy hh:mm tt");
+    }
+
+    public void SaveFavoriteCurrency()
+    {
+        string m_FavoriteCurrenciesStr = "";
+        foreach (string s in m_DefaultFavoritCountryList)
+        {
+            m_FavoriteCurrenciesStr += s;
+            m_FavoriteCurrenciesStr += ",";
+        }
+        m_FavoriteCurrenciesStr = m_FavoriteCurrenciesStr.TrimEnd(',');
+        UnityEngine.PlayerPrefs.SetString("CurrencyFavorite", m_FavoriteCurrenciesStr);
+    }
+
+    public void ReadFavoriteCurrency()
+    {
+        if (UnityEngine.PlayerPrefs.GetString("CurrencyFavorite", "null") != "null")
+        {
+            string[] m_Split = UnityEngine.PlayerPrefs.GetString("CurrencyFavorite").Split(',');
+            m_DefaultFavoritCountryList.Clear();
+            foreach (string s in m_Split)
+            {
+                AddToDefaultFavoritCountries(s);
+            }
+        }
     }
     #endregion Calculations
 

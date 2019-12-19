@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Globalization;
@@ -11,12 +10,15 @@ public class UIController : Singleton<UIController>
 {
 
     #region Start
+    /// <summary>
+    /// This is the start. This method will be called to Update all the exchange rates when they are received from the API
+    /// </summary>
     public void InitiateCurrencyData()
     {
         Transform m_ScrollRectContainer = CountryScrollParentRect.Find("Scroll View").gameObject.GetComponent<ScrollRect>().content;
         GameObject m_ScrollItemObj;
 
-        if (m_ScrollRectContainer.childCount == 0)
+        if (m_ScrollRectContainer.childCount == 0) // Initially we create the Country Scroll list. 
         {
             foreach (KeyValuePair<string, string[]> pair in DataClass.Instance.CountryCodeDictionary)
             {
@@ -45,7 +47,7 @@ public class UIController : Singleton<UIController>
                 }
             }
         }
-        else
+        else // Once the country scroll list is present we only have to use that. 
         {
             for (int i = 0; i < m_ScrollRectContainer.childCount; i++)
             {
@@ -174,12 +176,14 @@ public class UIController : Singleton<UIController>
     private void BringInCountryScroll(bool _IsCalledFromExchangePanel = false)
     {
         ScrollDissmissBtn.SetActive(true);
+        ScrollDissmissBtn.transform.GetChild(0).gameObject.SetActive(false);
 
-        if(!_IsCalledFromExchangePanel)
+        if (!_IsCalledFromExchangePanel)
         {
             CountryScrollParentRect.SetParent(Panels[0].transform);
             ScrollDissmissBtn.gameObject.transform.SetParent(Panels[0].transform);
             ScrollDissmissBtn.GetComponent<RectTransform>().SetAsLastSibling();
+
             if (m_IsConvertButtonClick)
             {
                 CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta = new Vector2(CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta.x, m_ScrollRectHeightArray[0]);
@@ -189,13 +193,18 @@ public class UIController : Singleton<UIController>
                 CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta = new Vector2(CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta.x, m_ScrollRectHeightArray[1]);
             }
         }
-        else
+        else 
         {
+            if (m_IsAddMoreClicked)
+            {
+                ScrollDissmissBtn.transform.GetChild(0).gameObject.SetActive(true);
+            }
             CountryScrollParentRect.SetParent(Panels[1].transform);
             ScrollDissmissBtn.gameObject.transform.SetParent(Panels[1].transform);
             ScrollDissmissBtn.GetComponent<RectTransform>().SetAsLastSibling();
             CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta = new Vector2(CountryScrollParentRect.Find("Scroll View").GetComponent<RectTransform>().sizeDelta.x, 710);
         }
+
 
         CountryScrollParentRect.SetAsLastSibling();
     }
@@ -224,7 +233,22 @@ public class UIController : Singleton<UIController>
         }
         else
         {
-            Set_Exchange_ToConvert(_countryNameAndRateAndCurrencyCode);
+            if(m_IsAddMoreClicked)
+            {
+                m_IsAddMoreClicked = false;
+                if (DataClass.Instance.IsAllReadyAddedToFavorite(_countryNameAndRateAndCurrencyCode.Split(':')[0]))
+                {
+                    BringInPopUpPanel("Error", "Currency already added to the list. Try adding a different currency.");
+                }
+                else
+                {
+                    AddFavoriteScrollItem(_countryNameAndRateAndCurrencyCode.Split(':')[0], true);
+                }
+            }
+            else 
+            { 
+                Set_Exchange_ToConvert(_countryNameAndRateAndCurrencyCode);
+            }
         }
     }
 
@@ -280,6 +304,9 @@ public class UIController : Singleton<UIController>
     public Transform Ex_FavoriteContent;
     public GameObject Ex_FavoriteScrollItemPrefab;
     public GameObject Ex_AddMoreScrollItemPrefab;
+    private bool m_IsAddMoreClicked = false;
+    private GameObject m_TempFavoriteScrollItem;
+    private double m_TempExchangeRate;
 
     private void Set_Exchange_ToConvert(string _countryNameAndRateAndCurrencyCode, bool _atStart = false)
     {
@@ -309,41 +336,23 @@ public class UIController : Singleton<UIController>
 
     private void Set_ExchangeRatesResult_CurrencyAmounts()
     {
-        double m_TempExchangeRate;
+
         if (Ex_FavoriteContent.childCount == 0)
         {
-            GameObject m_FavoriteScrollItem;
-
             foreach(string _country in DataClass.Instance.DefaultFavoritCountryList)
             {
-                m_FavoriteScrollItem = Instantiate(Ex_FavoriteScrollItemPrefab);
-                m_TempExchangeRate = Convert.ToDouble(DataClass.Instance.CurrencyRatesDictionary[DataClass.Instance.CountryCodeDictionary[_country][0]]);
-                m_FavoriteScrollItem.name = _country + ":" + m_TempExchangeRate + ":" + DataClass.Instance.CountryCodeDictionary[_country][0];
-                //m_ScrollItemObj.GetComponent<Button>().onClick.AddListener(delegate { OnScrollItemClicked(m_CountryNameAndRateAndCurrencyCode); });
-                m_FavoriteScrollItem.transform.Find("Button").Find("CountryTxt").gameObject.GetComponent<Text>().text = _country;
-                m_FavoriteScrollItem.transform.Find("Button").Find("CurrencyTxt").gameObject.GetComponent<Text>().text = DataClass.Instance.CountryCodeDictionary[_country][0];
-                m_FavoriteScrollItem.transform.Find("Button").Find("FlagImg").gameObject.GetComponent<Image>().sprite = Resources.Load<Sprite>("CountryFlags/" + DataClass.Instance.CountryCodeDictionary[_country][1].ToLower());
-
-                try
-                {
-                    RegionInfo m_RegionInfo = new RegionInfo(DataClass.Instance.CountryCodeDictionary[_country][1]);
-                    m_FavoriteScrollItem.transform.Find("SymbolTxt").gameObject.GetComponent<Text>().text = m_RegionInfo.CurrencySymbol;
-                }
-                catch (Exception ex)
-                {
-                    m_FavoriteScrollItem.transform.Find("SymbolTxt").gameObject.GetComponent<Text>().text = "";
-                    Debug.Log(ex.Message);
-                }
-
-                m_FavoriteScrollItem.transform.Find("ExchangeRateTxt").gameObject.GetComponent<Text>().text = DataClass.Instance.ConvertedCurrency(Convert.ToDouble(Ex_FromInputField.text), m_Ex_ToExchangeRate, m_TempExchangeRate);
-
-                m_FavoriteScrollItem.transform.SetParent(Ex_FavoriteContent);
-                m_FavoriteScrollItem.transform.localScale = Vector3.one;
+                AddFavoriteScrollItem(_country);
             }
+
+            m_TempFavoriteScrollItem = Instantiate(Ex_AddMoreScrollItemPrefab);
+            m_TempFavoriteScrollItem.name = "AddMore";
+            m_TempFavoriteScrollItem.transform.Find("AddBtn").GetComponent<Button>().onClick.AddListener(delegate { ExAddMoreButtonClick(); });
+            m_TempFavoriteScrollItem.transform.SetParent(Ex_FavoriteContent);
+            m_TempFavoriteScrollItem.transform.localScale = Vector3.one;
         }
         else
         {
-            for(int i = 0; i < Ex_FavoriteContent.childCount; i++)
+            for(int i = 0; i < Ex_FavoriteContent.childCount-1; i++)
             {
                 string m_Country_Rate_CurrencyCode = Ex_FavoriteContent.GetChild(i).name;
                 m_TempExchangeRate = Convert.ToDouble(DataClass.Instance.CurrencyRatesDictionary[DataClass.Instance.CountryCodeDictionary[m_Country_Rate_CurrencyCode.Split(':')[0]][0]]);
@@ -355,9 +364,57 @@ public class UIController : Singleton<UIController>
 
     public void Ex_FromButtonClick()
     {
-        m_IsConvertButtonClick = true;
         CountryScrollParentRect.position = new Vector2(CountryScrollParentRect.position.x, Ex_FromFlag.gameObject.transform.parent.position.y);
         BringInCountryScroll(true);
+    }
+
+    private void ExAddMoreButtonClick()
+    {
+        m_IsAddMoreClicked = true;
+        CountryScrollParentRect.position = new Vector2(CountryScrollParentRect.position.x, Ex_FromFlag.gameObject.transform.parent.position.y);
+        BringInCountryScroll(true);
+    }
+
+    private void AddFavoriteScrollItem(string _country, bool _isFromAddMore = false)
+    {
+        m_TempFavoriteScrollItem = Instantiate(Ex_FavoriteScrollItemPrefab);
+        m_TempExchangeRate = Convert.ToDouble(DataClass.Instance.CurrencyRatesDictionary[DataClass.Instance.CountryCodeDictionary[_country][0]]);
+        m_TempFavoriteScrollItem.name = _country + ":" + m_TempExchangeRate + ":" + DataClass.Instance.CountryCodeDictionary[_country][0];
+        m_TempFavoriteScrollItem.transform.Find("Button").Find("CountryTxt").gameObject.GetComponent<Text>().text = _country;
+        m_TempFavoriteScrollItem.transform.Find("Button").Find("CurrencyTxt").gameObject.GetComponent<Text>().text = DataClass.Instance.CountryCodeDictionary[_country][0];
+        m_TempFavoriteScrollItem.transform.Find("Button").Find("FlagImg").gameObject.GetComponent<Image>().sprite = Resources.Load<Sprite>("CountryFlags/" + DataClass.Instance.CountryCodeDictionary[_country][1].ToLower());
+
+        try
+        {
+            RegionInfo m_RegionInfo = new RegionInfo(DataClass.Instance.CountryCodeDictionary[_country][1]);
+            m_TempFavoriteScrollItem.transform.Find("SymbolTxt").gameObject.GetComponent<Text>().text = m_RegionInfo.CurrencySymbol;
+        }
+        catch (Exception ex)
+        {
+            m_TempFavoriteScrollItem.transform.Find("SymbolTxt").gameObject.GetComponent<Text>().text = "";
+            Debug.Log(ex.Message);
+        }
+
+        GameObject m_CurrentItem = m_TempFavoriteScrollItem; // If not done this the last reference which is "Add more button" will be added to the delegate
+        m_TempFavoriteScrollItem.transform.Find("DeleteBtn").gameObject.GetComponent<Button>().onClick.AddListener(delegate { OnRemoveFavoriteItemClicked(m_CurrentItem); });
+
+        m_TempFavoriteScrollItem.transform.Find("ExchangeRateTxt").gameObject.GetComponent<Text>().text = DataClass.Instance.ConvertedCurrency(Convert.ToDouble(Ex_FromInputField.text), m_Ex_ToExchangeRate, m_TempExchangeRate);
+
+        m_TempFavoriteScrollItem.transform.SetParent(Ex_FavoriteContent);
+        m_TempFavoriteScrollItem.transform.localScale = Vector3.one;
+
+        if(_isFromAddMore)
+        {
+            DataClass.Instance.AddToDefaultFavoritCountries(_country);
+            m_TempFavoriteScrollItem.GetComponent<RectTransform>().SetSiblingIndex(Ex_FavoriteContent.childCount-2);
+            Ex_FavoriteContent.parent.parent.gameObject.GetComponent<ScrollRect>().verticalNormalizedPosition = 0; // Focus to Add more
+        }
+    }
+
+    private void OnRemoveFavoriteItemClicked(GameObject _go)
+    {
+        DataClass.Instance.DefaultFavoritCountryList.Remove(_go.name.Split(':')[0]);
+        Destroy(_go);
     }
 
     public void OnExchangeInputFieldEnd(string _currencyAmount)
@@ -489,8 +546,10 @@ public class UIController : Singleton<UIController>
 
     public void ShowGraphButton(Transform _arrowTransform)
     {
+        //TODO : Call the GetCurrencyDataForPastWeek() to get the data for past week. Following code should be changed accordingly with the API call results.
+
         //If true, the graph will be shown
-        if(Math.Abs(_arrowTransform.localScale.y - -1) < Mathf.Epsilon)  
+        if (Math.Abs(_arrowTransform.localScale.y - -1) < Mathf.Epsilon)  
         {
             _arrowTransform.localScale = new Vector3(1, 1, 1);
             _arrowTransform.parent.Find("Text").gameObject.GetComponent<Text>().text = "Hide past week";

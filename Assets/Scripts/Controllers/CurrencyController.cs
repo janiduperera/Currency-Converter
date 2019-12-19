@@ -20,6 +20,23 @@ public class CurrencyController : Singleton<CurrencyController>
         GetCurrencyData("latest");
     }
 
+    private void OnApplicationPause(bool _pause)
+    {
+        if(_pause)
+        {
+            DataClass.Instance.SaveFavoriteCurrency();
+        }
+        else
+        {
+            DataClass.Instance.ReadFavoriteCurrency();
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        DataClass.Instance.SaveFavoriteCurrency();
+    }
+
     #region API Calling
 
     //---- Latest Data

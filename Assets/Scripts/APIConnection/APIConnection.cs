@@ -20,7 +20,7 @@ public class APIConnection : Singleton<APIConnection>
     {
         StartCoroutine(RequestCoroutine(_url, _callbackOnSuccess, _callbackOnFail));
 
-        //TODO: Remove 
+        //TODO: Remove This is used to test the system
         //_callbackOnSuccess?.Invoke((IDictionary)Json.Deserialize(Test.Instance.jsonTxt.text));
     }
 

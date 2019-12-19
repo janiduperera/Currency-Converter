@@ -26,6 +26,7 @@ public class AdController : Singleton<AdController>
         {
             yield return new WaitForSeconds(0.5f);
         }
+        Advertisement.Banner.SetPosition(BannerPosition.BOTTOM_CENTER);
         Advertisement.Banner.Show(m_BannerAdPlacementID);
     }
 }
